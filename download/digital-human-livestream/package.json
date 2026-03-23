@@ -1,0 +1,15 @@
+{
+  "name": "digital-human-livestream",
+  "version": "1.0.0",
+  "description": "数字人YouTube无人值守直播系统 - TTS桥接",
+  "type": "module",
+  "main": "tts_bridge.js",
+  "scripts": {
+    "tts": "node tts_bridge.js"
+  },
+  "dependencies": {
+    "z-ai-web-dev-sdk": "latest"
+  },
+  "author": "",
+  "license": "MIT"
+}
