@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./assets:/app/assets
+      - ./output:/app/output
+      - ./music:/app/music
+      - ./logs:/app/logs
+    environment:
+      - DEBUG=false
+      - YOUTUBE_STREAM_KEY=${YOUTUBE_STREAM_KEY:-}
+      - BILIBILI_STREAM_KEY=${BILIBILI_STREAM_KEY:-}
+      - TIKTOK_STREAM_KEY=${TIKTOK_STREAM_KEY:-}
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped

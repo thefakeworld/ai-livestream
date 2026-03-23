@@ -1,0 +1,563 @@
+openapi: 3.0.3
+info:
+  title: AI Livestream API
+  description: |
+    AI 数字人直播系统 API 规范
+    
+    ## 功能模块
+    - **导播控制**: 直播启动、停止、内容切换
+    - **平台管理**: 多平台推流配置
+    - **内容管理**: 新闻、音乐、视频内容库
+    - **流状态**: 推流状态监控
+    
+  version: 2.0.0
+  contact:
+    name: AI Livestream Team
+    
+servers:
+  - url: /api/v1
+    description: API v1 (通过代理)
+  - url: http://localhost:8000/api/v1
+    description: 本地开发服务器
+
+tags:
+  - name: Director
+    description: 导播控制接口
+  - name: Platform
+    description: 平台管理接口
+  - name: Stream
+    description: 推流状态接口
+  - name: Content
+    description: 内容管理接口
+
+paths:
+  # ==================== Director API ====================
+  /director:
+    get:
+      tags: [Director]
+      summary: 获取导播状态
+      description: 返回当前导播台的完整状态信息
+      operationId: getDirectorStatus
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectorStatus'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags: [Director]
+      summary: 执行导播操作
+      description: |
+        支持的操作:
+        - `start`: 开始直播
+        - `stop`: 停止直播
+        - `next`: 切换到下一个内容
+      operationId: directorAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectorActionRequest'
+            examples:
+              start:
+                value: { "action": "start" }
+              stop:
+                value: { "action": "stop" }
+              next:
+                value: { "action": "next" }
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectorActionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /director/status:
+    get:
+      tags: [Director]
+      summary: 获取导播状态 (别名)
+      operationId: getDirectorStatusAlias
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectorStatus'
+
+  /director/start:
+    post:
+      tags: [Director]
+      summary: 开始直播
+      operationId: startDirector
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectorActionResponse'
+
+  /director/stop:
+    post:
+      tags: [Director]
+      summary: 停止直播
+      operationId: stopDirector
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectorActionResponse'
+
+  /director/switch:
+    post:
+      tags: [Director]
+      summary: 切换内容
+      operationId: switchContent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentSwitchRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentSwitchResponse'
+
+  /director/queue:
+    get:
+      tags: [Director]
+      summary: 获取内容队列
+      operationId: getContentQueue
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentQueueResponse'
+
+  # ==================== Platform API ====================
+  /platform/list:
+    get:
+      tags: [Platform]
+      summary: 获取所有平台列表
+      operationId: listPlatforms
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformListResponse'
+
+  /platform/available:
+    get:
+      tags: [Platform]
+      summary: 获取可用平台类型
+      operationId: listAvailablePlatforms
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailablePlatformsResponse'
+
+  /platform/{platform_type}:
+    get:
+      tags: [Platform]
+      summary: 获取平台详情
+      operationId: getPlatform
+      parameters:
+        - $ref: '#/components/parameters/PlatformType'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Platform]
+      summary: 删除平台配置
+      operationId: removePlatform
+      parameters:
+        - $ref: '#/components/parameters/PlatformType'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /platform/{platform_type}/enable:
+    post:
+      tags: [Platform]
+      summary: 启用平台
+      operationId: enablePlatform
+      parameters:
+        - $ref: '#/components/parameters/PlatformType'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /platform/{platform_type}/disable:
+    post:
+      tags: [Platform]
+      summary: 禁用平台
+      operationId: disablePlatform
+      parameters:
+        - $ref: '#/components/parameters/PlatformType'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /platform/{platform_type}/key:
+    post:
+      tags: [Platform]
+      summary: 更新推流密钥
+      operationId: updateStreamKey
+      parameters:
+        - $ref: '#/components/parameters/PlatformType'
+        - name: stream_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Stream API ====================
+  /stream/status:
+    get:
+      tags: [Stream]
+      summary: 获取推流状态
+      operationId: getStreamStatus
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamStatus'
+
+  /stream/start:
+    post:
+      tags: [Stream]
+      summary: 开始推流
+      operationId: startStream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamStartRequest'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamStatus'
+
+  /stream/stop:
+    post:
+      tags: [Stream]
+      summary: 停止推流
+      operationId: stopStream
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamStatus'
+
+components:
+  # ==================== Parameters ====================
+  parameters:
+    PlatformType:
+      name: platform_type
+      in: path
+      required: true
+      description: 平台类型
+      schema:
+        type: string
+        enum: [youtube, tiktok, bilibili, douyin, twitch, facebook, kuaishou, huya, douyu, xiaohongshu]
+
+  # ==================== Responses ====================
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Invalid request parameter"
+
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Resource not found"
+
+    InternalServerError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== Schemas ====================
+  schemas:
+    # ---------- Director ----------
+    DirectorStatus:
+      type: object
+      required: [is_running, content_queue, uptime]
+      properties:
+        is_running:
+          type: boolean
+          description: 是否正在运行
+        current_content:
+          type: string
+          nullable: true
+          description: 当前播放内容
+        content_queue:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentItem'
+          description: 内容队列
+        uptime:
+          type: number
+          format: float
+          description: 运行时长(秒)
+
+    DirectorActionRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [start, stop, next, switch]
+          description: 操作类型
+        data:
+          type: object
+          additionalProperties: true
+          description: 操作参数
+
+    DirectorActionResponse:
+      type: object
+      required: [success, message, is_running]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        is_running:
+          type: boolean
+        preview_url:
+          type: string
+          description: 预览地址
+
+    ContentSwitchRequest:
+      type: object
+      required: [content_type]
+      properties:
+        content_type:
+          type: string
+          enum: [news, music, video, next]
+        content_id:
+          type: string
+          nullable: true
+
+    ContentSwitchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        content:
+          $ref: '#/components/schemas/ContentItem'
+
+    ContentQueueResponse:
+      type: object
+      properties:
+        queue:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentItem'
+        total:
+          type: integer
+        news_count:
+          type: integer
+        music_count:
+          type: integer
+        video_count:
+          type: integer
+
+    ContentItem:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [news, music, video]
+        name:
+          type: string
+        title:
+          type: string
+        path:
+          type: string
+        duration:
+          type: integer
+          description: 时长(秒)
+        artist:
+          type: string
+          nullable: true
+
+    # ---------- Platform ----------
+    PlatformListResponse:
+      type: object
+      properties:
+        platforms:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/PlatformResponse'
+        available_platforms:
+          type: array
+          items:
+            type: string
+        enabled_count:
+          type: integer
+        configured_count:
+          type: integer
+
+    AvailablePlatformsResponse:
+      type: object
+      properties:
+        platforms:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              name:
+                type: string
+
+    PlatformResponse:
+      type: object
+      properties:
+        platform_type:
+          type: string
+        display_name:
+          type: string
+        enabled:
+          type: boolean
+        configured:
+          type: boolean
+        status:
+          type: string
+          enum: [disconnected, connecting, connected, error]
+        has_stream_key:
+          type: boolean
+        rtmp_url:
+          type: string
+        last_error:
+          type: string
+          nullable: true
+
+    # ---------- Stream ----------
+    StreamStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [idle, starting, running, stopping, error]
+        start_time:
+          type: number
+          format: float
+          nullable: true
+        duration:
+          type: number
+          format: float
+        frames_sent:
+          type: integer
+        bitrate:
+          type: string
+        error_message:
+          type: string
+          nullable: true
+        current_content:
+          type: string
+          nullable: true
+
+    StreamStartRequest:
+      type: object
+      properties:
+        video_source:
+          type: string
+        audio_source:
+          type: string
+        platforms:
+          type: array
+          items:
+            type: string
+
+    # ---------- Common ----------
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        error:
+          type: string
